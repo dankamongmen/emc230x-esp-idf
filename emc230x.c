@@ -298,7 +298,7 @@ int emc230x_readtach(i2c_master_dev_handle_t i2cemc, unsigned fanidx, unsigned* 
 
 static int
 emc230x_set_clockbits(i2c_master_dev_handle_t i2cemc, uint8_t bits){
-  uint8_t buf = {
+  uint8_t buf[] = {
     EMCREG_CONFIGURATION,
     0,
   };
