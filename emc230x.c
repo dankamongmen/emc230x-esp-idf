@@ -255,3 +255,17 @@ int emc230x_detect(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc,
   ESP_LOGI(TAG, "successfully detected EMC230x at 0x%02x", addr);
   return 0;
 }
+
+int emc230x_setpwm(i2c_master_dev_handle_t i2cemc, unsigned fanidx, uint8_t pwm){
+  // no devices support more than five fans. ideally we would check against
+  // the actual device in use...
+  if(fanidx > 5){
+    ESP_LOGE(TAG, "invalid fan index %u", fanidx);
+    return -1;
+  }
+  uint8_t buf[] = {
+    EMCREG_FAN1SETTING + 16 * fanidx,
+    pwm
+  };
+  return emc230x_xmit(i2cemc, buf, sizeof(buf));
+}
