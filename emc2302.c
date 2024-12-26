@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <freertos/FreeRTOS.h>
 
+#define TIMEOUT_MS 35 // derived from SMBus
+
 static const char* TAG = "emc";
 
 #define EMC2301_ADDRESS   0x2f // emc2301
@@ -151,9 +153,9 @@ emc230x_mod_detect(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc,
     return -1;
   }
   uint8_t regv;
-  if(emc230x_manufacturer(i2cemc, &regv) == 0){
+  if(emc230x_manufacturer(*i2cemc, &regv) == 0){
     if(regv == EMCMANUFACTURERID){
-      if(emc230x_product(i2cemc, &regv) == 0){
+      if(emc230x_product(*i2cemc, &regv) == 0){
         if(regv == productid){
           return 0;
         }
@@ -163,30 +165,31 @@ emc230x_mod_detect(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc,
   ESP_LOGE(TAG, "device at 0x%02x responded with unexpected data", addr);
   // the device didn't respond with the expected manufacturer/product ID.
   // remove it from the i2c bus master and return -1.
-  if((e = i2c_master_bus_rm_device(i2cemc)) != ESP_OK){
-    ESP_LOGW(TAG, "error (%s) removing i2c device at 0x%02x", esp_err_to_name(e));
+  if((e = i2c_master_bus_rm_device(*i2cemc)) != ESP_OK){
+    ESP_LOGW(TAG, "error (%s) removing i2c device at 0x%02x", esp_err_to_name(e), addr);
   }
   return -1;
 }
 
 static int16_t
-emc2302_detect_addr(i2c_master_bus_handle_t i2c, emc2302_model model){
+emc2302_detect_addr(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc,
+                    emc2302_model model){
   switch(model){
     case EMC2302_MODEL_UNSPEC:
-      if(emc230x_mod_detect(i2c, EMC2302_1_ADDRESS, EMCPRODUCTID_2302) == 0){
+      if(emc230x_mod_detect(i2c, i2cemc, EMC2302_1_ADDRESS, EMCPRODUCTID_2302) == 0){
         return EMC2302_1_ADDRESS;
       }
-      if(emc230x_mod_detect(i2c, EMC2302_2_ADDRESS, EMCPRODUCTID_2302) == 0){
+      if(emc230x_mod_detect(i2c, i2cemc, EMC2302_2_ADDRESS, EMCPRODUCTID_2302) == 0){
         return EMC2302_2_ADDRESS;
       }
       break;
     case EMC2302_MODEL_1:
-      if(emc230x_mod_detect(i2c, EMC2302_1_ADDRESS, EMCPRODUCTID_2302) == 0){
+      if(emc230x_mod_detect(i2c, i2cemc, EMC2302_1_ADDRESS, EMCPRODUCTID_2302) == 0){
         return EMC2302_1_ADDRESS;
       }
       break;
     case EMC2302_MODEL_2:
-      if(emc230x_mod_detect(i2c, EMC2302_2_ADDRESS, EMCPRODUCTID_2302) == 0){
+      if(emc230x_mod_detect(i2c, i2cemc, EMC2302_2_ADDRESS, EMCPRODUCTID_2302) == 0){
         return EMC2302_2_ADDRESS;
       }
       break;
@@ -196,7 +199,7 @@ emc2302_detect_addr(i2c_master_bus_handle_t i2c, emc2302_model model){
 
 int emc2302_detect(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc,
                    emc2302_model model){
-  int16_t addr = emc2302_detect_addr(i2c, model);
+  int16_t addr = emc2302_detect_addr(i2c, i2cemc, model);
   if(addr < 0){
     ESP_LOGE(TAG, "error detecting EMC2302");
     return -1;
