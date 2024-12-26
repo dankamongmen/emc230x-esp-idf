@@ -172,8 +172,8 @@ emc230x_mod_detect(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc,
 }
 
 static int16_t
-emc2302_detect_addr(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc,
-                    emc2302_model model){
+emc230x_detect_addr(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc,
+                    emc230x_model model){
   switch(model){
     case EMC2302_MODEL_UNSPEC:
       if(emc230x_mod_detect(i2c, i2cemc, EMC2302_1_ADDRESS, EMCPRODUCTID_2302) == 0){
@@ -197,11 +197,11 @@ emc2302_detect_addr(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc
   return -1;
 }
 
-int emc2302_detect(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc,
-                   emc2302_model model){
-  int16_t addr = emc2302_detect_addr(i2c, i2cemc, model);
+int emc230x_detect(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc,
+                   emc230x_model model){
+  int16_t addr = emc230x_detect_addr(i2c, i2cemc, model);
   if(addr < 0){
-    ESP_LOGE(TAG, "error detecting EMC2302");
+    ESP_LOGE(TAG, "error detecting EMC230x");
     return -1;
   }
   ESP_LOGI(TAG, "successfully detected EMC230x at 0x%02x", addr);
@@ -210,7 +210,7 @@ int emc2302_detect(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc,
 
 // FIXME we'll probably want this to be async
 static int
-emc2302_xmit(i2c_master_dev_handle_t i2c, const void* buf, size_t blen){
+emc230x_xmit(i2c_master_dev_handle_t i2c, const void* buf, size_t blen){
   esp_err_t e = i2c_master_transmit(i2c, buf, blen, TIMEOUT_MS);
   if(e != ESP_OK){
     ESP_LOGE(TAG, "error %d transmitting %zuB via I2C", e, blen);
