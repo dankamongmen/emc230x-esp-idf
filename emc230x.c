@@ -11,8 +11,11 @@ static const char* TAG = "emc";
 #define EMC2302_1_ADDRESS 0x2e // emc2302-1
 #define EMC2302_2_ADDRESS 0x2f // emc2302-2 (same as emc2301)
 
+// software locked registers cannot be modified unless the LOCK bit (LSB
+// of EMCREG_SOFTWARELOCK) is zero.
 typedef enum {
-  EMCREG_CONFIGURATION = 0x20,
+  // configuration register is 0x40 on reset (DIS_TO set, MASK/WD_EN/DRESK/USECK unset)
+  EMCREG_CONFIGURATION = 0x20,      // software locked
   EMCREG_FANSTATUS = 0x24,
   EMCREG_STALLSTATUS = 0x25,
   EMCREG_SPINSTATUS = 0x26,
@@ -24,13 +27,13 @@ typedef enum {
   EMCREG_FAN1SETTING = 0x30,
   EMCREG_PWM1DIVIDE = 0x31,
   EMCREG_FAN1CONF1 = 0x32,
-  EMCREG_FAN1CONF2 = 0x33,
-  EMCREG_GAIN1 = 0x35,
-  EMCREG_FAN1SPINUP = 0x36,
-  EMCREG_FAN1MAXSTEP = 0x37,
-  EMCREG_FAN1MINDRIVE = 0x38,
-  EMCREG_FAN1FAILLOW = 0x3a,
-  EMCREG_FAN1FAILHIGH = 0x3b,
+  EMCREG_FAN1CONF2 = 0x33,          // software locked
+  EMCREG_GAIN1 = 0x35,              // software locked
+  EMCREG_FAN1SPINUP = 0x36,         // software locked
+  EMCREG_FAN1MAXSTEP = 0x37,        // software locked
+  EMCREG_FAN1MINDRIVE = 0x38,       // software locked
+  EMCREG_FAN1FAILLOW = 0x3a,        // software locked
+  EMCREG_FAN1FAILHIGH = 0x3b,       // software locked
   EMCREG_TACH1TARGLOW = 0x3c,
   EMCREG_TACH1TARGHIGH = 0x3d,
   EMCREG_TACH1READLOW = 0x3e,
@@ -132,6 +135,40 @@ emc230x_product(i2c_master_dev_handle_t i2c, uint8_t* val){
   return emc230x_readreg(i2c, EMCREG_PRODUCT, "ProductID", val);
 }
 
+static int
+emc230x_xmit(i2c_master_dev_handle_t i2c, const void* buf, size_t blen){
+  esp_err_t e = i2c_master_transmit(i2c, buf, blen, TIMEOUT_MS);
+  if(e != ESP_OK){
+    ESP_LOGE(TAG, "error %d transmitting %zuB via I2C", e, blen);
+    return -1;
+  }
+  return 0;
+}
+
+static inline int
+emc230x_set_softwarelock(i2c_master_dev_handle_t i2c, bool lock){
+  uint8_t buf[] = {
+    EMCREG_SOFTWARELOCK,
+    lock
+  };
+  return emc230x_xmit(i2c, buf, sizeof(buf));
+}
+
+// unlock the software lock, write the payload, and lock it back up
+static int
+emc230x_xmit_locked(i2c_master_dev_handle_t i2c, const void* buf, size_t blen){
+  if(emc230x_set_softwarelock(i2c, false)){
+    return -1;
+  }
+  if(emc230x_xmit(i2c, buf, blen)){
+    return -1;
+  }
+  if(emc230x_set_softwarelock(i2c, true)){
+    return -1;
+  }
+  return 0;
+}
+
 // probe for an emc230[1235] at the specified address. only considered a
 // success upon verification of the expected product ID.
 static int
@@ -216,16 +253,5 @@ int emc230x_detect(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc,
     return -1;
   }
   ESP_LOGI(TAG, "successfully detected EMC230x at 0x%02x", addr);
-  return 0;
-}
-
-// FIXME we'll probably want this to be async
-static int
-emc230x_xmit(i2c_master_dev_handle_t i2c, const void* buf, size_t blen){
-  esp_err_t e = i2c_master_transmit(i2c, buf, blen, TIMEOUT_MS);
-  if(e != ESP_OK){
-    ESP_LOGE(TAG, "error %d transmitting %zuB via I2C", e, blen);
-    return -1;
-  }
   return 0;
 }
