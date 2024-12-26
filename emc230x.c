@@ -1,4 +1,4 @@
-#include "emc2302.h"
+#include "emc230x.h"
 #include <esp_log.h>
 #include <stdint.h>
 #include <freertos/FreeRTOS.h>
