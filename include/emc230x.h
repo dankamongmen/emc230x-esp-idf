@@ -21,6 +21,17 @@ typedef enum {
 int emc230x_detect(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc,
                    emc230x_model model);
 
+// use the CLK pin as an push-pull output, allowing multiple devices to sync.
+// this forces use of our internal oscillator as our clock source.
+int emc230x_set_clockoutput(i2c_master_dev_handle_t i2cemc);
+
+// use the CLK pin as an input.
+int emc230x_set_clockinput(i2c_master_dev_handle_t i2cemc);
+
+// use the internal oscillator as our clock, and don't replicate it on the
+// CLK pin. this is the default setting.
+int emc230x_set_clocklocal(i2c_master_dev_handle_t i2cemc);
+
 // set the PWM output [0..255] for the specified fan.
 int emc230x_setpwm(i2c_master_dev_handle_t i2cemc, unsigned fanidx, uint8_t pwm);
 

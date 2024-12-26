@@ -1,4 +1,4 @@
-version: "0.0.1"
+version: "0.0.2"
 description: "Driver for the EMC230x 4-pin fan controllers"
 url: "https://github.com/dankamongmen/emc230x-esp-idf"
 license: "Apache-2.0"

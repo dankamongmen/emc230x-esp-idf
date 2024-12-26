@@ -295,3 +295,33 @@ int emc230x_readtach(i2c_master_dev_handle_t i2cemc, unsigned fanidx, unsigned* 
   *rpm += val >> 3u;
   return 0;
 }
+
+static int
+emc230x_set_clockbits(i2c_master_dev_handle_t i2cemc, uint8_t bits){
+  uint8_t buf = {
+    EMCREG_CONFIGURATION,
+    0,
+  };
+  if(emc230x_readreg(i2cemc, buf[0], "Configuration", buf + 1)){
+    return -1;
+  }
+  buf[1] = (buf[1] & 0xfc) | bits;
+  if(emc230x_xmit_locked(i2cemc, buf, sizeof(buf))){
+    return -1;
+  }
+  return 0;
+}
+
+int emc230x_set_clockoutput(i2c_master_dev_handle_t i2cemc){
+  return emc230x_set_clockbits(i2cemc, 2u);
+}
+
+int emc230x_set_clockinput(i2c_master_dev_handle_t i2cemc){
+  return emc230x_set_clockbits(i2cemc, 1u);
+}
+
+// use the internal oscillator as our clock, and don't replicate it on the
+// CLK pin. this is the default setting.
+int emc230x_set_clocklocal(i2c_master_dev_handle_t i2cemc){
+  return emc230x_set_clockbits(i2cemc, 0);
+}
