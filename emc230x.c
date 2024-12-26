@@ -175,6 +175,11 @@ static int16_t
 emc230x_detect_addr(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc,
                     emc230x_model model){
   switch(model){
+    case EMC2301:
+      if(emc230x_mod_detect(i2c, i2cemc, EMC2301_ADDRESS, EMCPRODUCTID_2301) == 0){
+        return EMC2302_1_ADDRESS;
+      }
+      break;
     case EMC2302_MODEL_UNSPEC:
       if(emc230x_mod_detect(i2c, i2cemc, EMC2302_1_ADDRESS, EMCPRODUCTID_2302) == 0){
         return EMC2302_1_ADDRESS;
@@ -192,6 +197,12 @@ emc230x_detect_addr(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc
       if(emc230x_mod_detect(i2c, i2cemc, EMC2302_2_ADDRESS, EMCPRODUCTID_2302) == 0){
         return EMC2302_2_ADDRESS;
       }
+      break;
+    case EMC2303:
+      ESP_LOGE(TAG, "emc2303 is not yet supported"); // FIXME
+      break;
+    case EMC2305:
+      ESP_LOGE(TAG, "emc2305 is not yet supported"); // FIXME
       break;
   }
   return -1;
