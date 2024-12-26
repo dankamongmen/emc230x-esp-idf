@@ -278,7 +278,7 @@ int emc230x_setpwm(i2c_master_dev_handle_t i2cemc, unsigned fanidx, uint8_t pwm)
   return emc230x_xmit(i2cemc, buf, sizeof(buf));
 }
 
-int emc230x_readtach(i2c_master_dev_handle_t i2cemc, unsigned fanidx, unsigned* rpm){
+int emc230x_gettach(i2c_master_dev_handle_t i2cemc, unsigned fanidx, unsigned* rpm){
   if(!check_fanidx(fanidx)){
     return -1;
   }
