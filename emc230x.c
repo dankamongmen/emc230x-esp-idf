@@ -256,11 +256,19 @@ int emc230x_detect(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc,
   return 0;
 }
 
-int emc230x_setpwm(i2c_master_dev_handle_t i2cemc, unsigned fanidx, uint8_t pwm){
+static inline bool
+check_fanidx(unsigned fanidx){
   // no devices support more than five fans. ideally we would check against
   // the actual device in use...
   if(fanidx > 5){
     ESP_LOGE(TAG, "invalid fan index %u", fanidx);
+    return false;
+  }
+  return true;
+}
+
+int emc230x_setpwm(i2c_master_dev_handle_t i2cemc, unsigned fanidx, uint8_t pwm){
+  if(!check_fanidx(fanidx)){
     return -1;
   }
   uint8_t buf[] = {
@@ -268,4 +276,22 @@ int emc230x_setpwm(i2c_master_dev_handle_t i2cemc, unsigned fanidx, uint8_t pwm)
     pwm
   };
   return emc230x_xmit(i2cemc, buf, sizeof(buf));
+}
+
+int emc230x_readtach(i2c_master_dev_handle_t i2cemc, unsigned fanidx, unsigned* rpm){
+  if(!check_fanidx(fanidx)){
+    return -1;
+  }
+  int reg = EMCREG_TACH1READHIGH + 16 * fanidx;
+  uint8_t val;
+  if(emc230x_readreg(i2cemc, reg, "ReadTachHigh", &val)){
+    return -1;
+  }
+  *rpm = val << 5u;
+  ++reg;
+  if(emc230x_readreg(i2cemc, reg, "ReadTachLow", &val)){
+    return -1;
+  }
+  *rpm += val >> 3u;
+  return 0;
 }

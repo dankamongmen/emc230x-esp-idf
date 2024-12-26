@@ -24,4 +24,7 @@ int emc230x_detect(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc,
 // set the PWM output [0..255] for the specified fan.
 int emc230x_setpwm(i2c_master_dev_handle_t i2cemc, unsigned fanidx, uint8_t pwm);
 
+// read the tachometer for the specified fan.
+int emc230x_gettach(i2c_master_dev_handle_t i2cemc, unsigned fanidx, unsigned* tach);
+
 #endif
