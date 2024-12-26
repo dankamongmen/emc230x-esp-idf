@@ -5,6 +5,7 @@
 
 #include <driver/i2c_master.h>
 
+// there are two models of the EMC2302, differing in SMBus address
 typedef enum {
   EMC2302_MODEL_UNSPEC,
   EMC2302_MODEL_1,
