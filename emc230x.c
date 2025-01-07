@@ -47,6 +47,7 @@ typedef enum {
   EMCREG_FANINTR = 0x29,
   EMCREG_PWMPOLARITY = 0x2a,
   EMCREG_PWMOUTPUT = 0x2b,
+  EMCREG_PWMBASE45 = 0x2c,
   EMCREG_PWMBASE123 = 0x2d,
   EMCREG_FAN1SETTING = 0x30,
   EMCREG_PWM1DIVIDE = 0x31,
@@ -481,4 +482,40 @@ int emc230x_set_pwmpolarity(const emc230x* emc, unsigned fanidx, bool inverted){
 
 int emc230x_set_pwmoutput(const emc230x* emc, unsigned fanidx, bool pushpull){
   return emc230x_set_fan_bit(emc, fanidx, pushpull, EMCREG_PWMOUTPUT, "PWMOutput");
+}
+
+int emc230x_set_pwmbasefreq(const emc230x* emc, unsigned fanidx, emc230x_base_freq freq){
+  if(!check_fanidx(emc, fanidx)){
+    return -1;
+  }
+  // we only have two bits for each fan
+  if(freq > 3){
+    ESP_LOGE(TAG, "frequency specifier (%d) too high for fan %u", freq, fanidx);
+    return -1;
+  }
+  const char* name;
+  uint8_t reg;
+  uint8_t mask;
+  uint8_t bits;
+  if(fanidx <= 2){
+    reg = EMCREG_PWMBASE123;
+    mask = 0x3u << (2 * fanidx);
+    name = "PWMBaseFreq123";
+    bits = freq << (2 * fanidx);
+  }else{
+    reg = EMCREG_PWMBASE45;
+    mask = 0x3u << (2 * (fanidx - 2));
+    name = "PWMBaseFreq45";
+    bits = freq << (2 * (fanidx - 2));
+  }
+  uint8_t buf[] = { reg, 0, };
+  if(emc230x_readreg(emc->i2c, buf[0], name, buf + 1)){
+    return -1;
+  }
+  buf[1] &= ~mask;
+  buf[1] |= bits;
+  if(emc230x_xmit_locked(emc->i2c, buf, sizeof(buf))){
+    return -1;
+  }
+  return 0;
 }

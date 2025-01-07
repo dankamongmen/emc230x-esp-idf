@@ -5,6 +5,14 @@
 
 #include <driver/i2c_master.h>
 
+// consider this struct to be opaque. it ought not be written nor read
+// by application code.
+typedef struct emc230x {
+  int productid;
+  i2c_master_dev_handle_t i2c;
+  uint8_t address;
+} emc230x;
+
 // in addition to the EMC2301, EMC2303, and EMC2305, there are two models of
 // the EMC2302, differing in SMBus address.
 typedef enum {
@@ -15,14 +23,6 @@ typedef enum {
   EMC2303,
   EMC2305
 } emc230x_model;
-
-// consider this struct to be opaque. it ought not be written nor read
-// by application code.
-typedef struct emc230x {
-  int productid;
-  i2c_master_dev_handle_t i2c;
-  uint8_t address;
-} emc230x;
 
 // probe the I2C bus for the specified EMC230x. if it is found, configure
 // i2cemc as a device handle for it, and return 0. return non-zero on error.
@@ -83,5 +83,16 @@ int emc230x_set_pwmpolarity(const emc230x* emc, unsigned fanidx, bool inverted);
 // by default, PWM is open drain. true sets the specified PWM output to
 // push-pull, false to open drain.
 int emc230x_set_pwmoutput(const emc230x* emc, unsigned fanidx, bool pushpull);
+
+typedef enum {
+  EMC230X_BASE_FREQ_26000,  // 26.00 kHz, value 00
+  EMC230X_BASE_FREQ_19530,  // 19.53 kHz, value 01
+  EMC230X_BASE_FREQ_4882,   // 4.882 kHz, value 10
+  EMC230X_BASE_FREQ_2441,   // 2.441 kHz, value 11
+} emc230x_base_freq;
+
+// set the base PWM frequency for the fan. default is EMC230X_BASE_FREQ_26000,
+// which is what you want for PC fans.
+int emc230x_set_pwmbasefreq(const emc230x* emc, unsigned fanidx, emc230x_base_freq freq);
 
 #endif
