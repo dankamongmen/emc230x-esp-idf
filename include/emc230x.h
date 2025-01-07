@@ -76,4 +76,8 @@ int emc230x_set_watchdog(const emc230x* emc, bool enabled);
 // for the specified fan. false disables them.
 int emc230x_set_interrupt(const emc230x* emc, unsigned fanidx, bool enabled);
 
+// by default, PWM is 100% at 0xff and 0% at 0x0. polarity can be inverted
+// to interpret higher PWM as a lower duty cycle.
+int emc230x_set_pwmpolarity(const emc230x* emc, unsigned fanidx, bool inverted);
+
 #endif

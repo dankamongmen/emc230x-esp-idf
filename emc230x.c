@@ -448,7 +448,9 @@ int emc230x_set_watchdog(const emc230x* emc, bool enabled){
   return emc230x_set_configuration(emc, 0xdf, 0x20, enabled);
 }
 
-int emc230x_set_interrupt(const emc230x* emc, unsigned fanidx, bool enabled){
+static int
+emc230x_set_fan_bit(const emc230x* emc, unsigned fanidx, bool enabled,
+                    emcreg_e reg, const char* name){
   uint8_t buf[] = {
     EMCREG_FANINTR,
     0,
@@ -456,7 +458,7 @@ int emc230x_set_interrupt(const emc230x* emc, unsigned fanidx, bool enabled){
   if(!check_fanidx(emc, fanidx)){
     return -1;
   }
-  if(emc230x_readreg(emc->i2c, buf[0], "InterruptEnabled", buf + 1)){
+  if(emc230x_readreg(emc->i2c, buf[0], name, buf + 1)){
     return -1;
   }
   const uint8_t mask = ~(1u << fanidx);
@@ -468,4 +470,12 @@ int emc230x_set_interrupt(const emc230x* emc, unsigned fanidx, bool enabled){
     return -1;
   }
   return 0;
+}
+
+int emc230x_set_interrupt(const emc230x* emc, unsigned fanidx, bool enabled){
+  return emc230x_set_fan_bit(emc, fanidx, enabled, EMCREG_FANINTR, "InterruptEnabled");
+}
+
+int emc230x_set_pwmpolarity(const emc230x* emc, unsigned fanidx, bool inverted){
+  return emc230x_set_fan_bit(emc, fanidx, inverted, EMCREG_PWMPOLARITY, "PWMPolarity");
 }
