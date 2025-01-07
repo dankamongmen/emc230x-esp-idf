@@ -196,7 +196,7 @@ emc230x_xmit_locked(i2c_master_dev_handle_t i2c, const void* buf, size_t blen){
 // probe for an emc230[1235] at the specified address. only considered a
 // success upon verification of the expected product ID.
 static int
-emc230x_mod_detect(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc,
+emc230x_mod_detect(i2c_master_bus_handle_t i2c, emc230x* emc,
                    uint8_t addr, uint8_t productid){
   esp_err_t e = i2c_master_probe(i2c, addr, TIMEOUT_MS);
   if(e != ESP_OK){
@@ -209,15 +209,17 @@ emc230x_mod_detect(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc,
     .device_address = addr,
     .scl_speed_hz = 100000,
 	};
-  if((e = i2c_master_bus_add_device(i2c, &devcfg, i2cemc)) != ESP_OK){
+  if((e = i2c_master_bus_add_device(i2c, &devcfg, &emc->i2c)) != ESP_OK){
     ESP_LOGE(TAG, "error (%s) adding i2c device at 0x%02x", esp_err_to_name(e), addr);
     return -1;
   }
   uint8_t regv;
-  if(emc230x_manufacturer(*i2cemc, &regv) == 0){
+  if(emc230x_manufacturer(emc->i2c, &regv) == 0){
     if(regv == EMCMANUFACTURERID){
-      if(emc230x_product(*i2cemc, &regv) == 0){
+      if(emc230x_product(emc->i2c, &regv) == 0){
         if(regv == productid){
+          emc->address = addr;
+          emc->productid = productid;
           return 0;
         }
       }
@@ -226,23 +228,23 @@ emc230x_mod_detect(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc,
   ESP_LOGE(TAG, "device at 0x%02x responded with unexpected data", addr);
   // the device didn't respond with the expected manufacturer/product ID.
   // remove it from the i2c bus master and return -1.
-  if((e = i2c_master_bus_rm_device(*i2cemc)) != ESP_OK){
+  if((e = i2c_master_bus_rm_device(emc->i2c)) != ESP_OK){
     ESP_LOGW(TAG, "error (%s) removing i2c device at 0x%02x", esp_err_to_name(e), addr);
   }
   return -1;
 }
 
-static int16_t
-emc230x_detect_addr(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc,
-                    emc230x_model model, uint8_t addr){
+// on success, emc is initialized and 0 is returned.
+static int
+emc230x_detect_addr(i2c_master_bus_handle_t i2c, emc230x_model model, uint8_t addr, emc230x* emc){
   switch(model){
     case EMC2301:
       if(addr && addr != EMC2301_ADDRESS){
         ESP_LOGE(TAG, "invalid address %u for emc2301", addr);
         return -1;
       }
-      if(emc230x_mod_detect(i2c, i2cemc, EMC2301_ADDRESS, EMCPRODUCTID_2301) == 0){
-        return EMC2301_ADDRESS;
+      if(emc230x_mod_detect(i2c, emc, EMC2301_ADDRESS, EMCPRODUCTID_2301) == 0){
+        return 0;
       }
       break;
     case EMC2302_MODEL_UNSPEC:
@@ -250,11 +252,11 @@ emc230x_detect_addr(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc
         ESP_LOGE(TAG, "invalid address %u for emc2302", addr);
         return -1;
       }
-      if(emc230x_mod_detect(i2c, i2cemc, EMC2302_1_ADDRESS, EMCPRODUCTID_2302) == 0){
-        return EMC2302_1_ADDRESS;
+      if(emc230x_mod_detect(i2c, emc, EMC2302_1_ADDRESS, EMCPRODUCTID_2302) == 0){
+        return 0;
       }
-      if(emc230x_mod_detect(i2c, i2cemc, EMC2302_2_ADDRESS, EMCPRODUCTID_2302) == 0){
-        return EMC2302_2_ADDRESS;
+      if(emc230x_mod_detect(i2c, emc, EMC2302_2_ADDRESS, EMCPRODUCTID_2302) == 0){
+        return 0;
       }
       break;
     case EMC2302_MODEL_1:
@@ -262,8 +264,8 @@ emc230x_detect_addr(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc
         ESP_LOGE(TAG, "invalid address %u for emc2302m1", addr);
         return -1;
       }
-      if(emc230x_mod_detect(i2c, i2cemc, EMC2302_1_ADDRESS, EMCPRODUCTID_2302) == 0){
-        return EMC2302_1_ADDRESS;
+      if(emc230x_mod_detect(i2c, emc, EMC2302_1_ADDRESS, EMCPRODUCTID_2302) == 0){
+        return 0;
       }
       break;
     case EMC2302_MODEL_2:
@@ -271,8 +273,8 @@ emc230x_detect_addr(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc
         ESP_LOGE(TAG, "invalid address %u for emc2302m2", addr);
         return -1;
       }
-      if(emc230x_mod_detect(i2c, i2cemc, EMC2302_2_ADDRESS, EMCPRODUCTID_2302) == 0){
-        return EMC2302_2_ADDRESS;
+      if(emc230x_mod_detect(i2c, emc, EMC2302_2_ADDRESS, EMCPRODUCTID_2302) == 0){
+        return 0;
       }
       break;
     case EMC2303:
@@ -282,8 +284,8 @@ emc230x_detect_addr(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc
         ESP_LOGE(TAG, "invalid address %u for emc2303", addr);
         return -1;
       }
-      if(emc230x_mod_detect(i2c, i2cemc, addr, EMCPRODUCTID_2303) == 0){
-        return addr;
+      if(emc230x_mod_detect(i2c, emc, addr, EMCPRODUCTID_2303) == 0){
+        return 0;
       }
       break;
     case EMC2305:
@@ -293,41 +295,48 @@ emc230x_detect_addr(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc
         ESP_LOGE(TAG, "invalid address %u for emc2305", addr);
         return -1;
       }
-      if(emc230x_mod_detect(i2c, i2cemc, addr, EMCPRODUCTID_2305) == 0){
-        return addr;
+      if(emc230x_mod_detect(i2c, emc, addr, EMCPRODUCTID_2305) == 0){
+        return 0;
       }
       break;
   }
   return -1;
 }
 
-int emc230x_detect(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc,
-                   emc230x_model model){
-  int16_t addr = emc230x_detect_addr(i2c, i2cemc, model, 0);
-  if(addr < 0){
+int emc230x_detect(i2c_master_bus_handle_t i2c, emc230x_model model, emc230x* emc){
+  if(emc230x_detect_addr(i2c, model, 0, emc)){
     ESP_LOGE(TAG, "error detecting EMC230x");
     return -1;
   }
-  ESP_LOGI(TAG, "successfully detected EMC230x at 0x%02x", addr);
+  ESP_LOGI(TAG, "successfully detected EMC230x at 0x%02x", emc->address);
   return 0;
 }
 
 int emc230x_detect_at_address(i2c_master_bus_handle_t i2c,
-                              i2c_master_dev_handle_t* i2cemc,
-                              emc230x_model model, uint8_t address){
-  int16_t addr = emc230x_detect_addr(i2c, i2cemc, model, address);
-  if(addr < 0){
+                              emc230x_model model, uint8_t address,
+                              emc230x* emc){
+  if(emc230x_detect_addr(i2c, model, address, emc)){
     ESP_LOGE(TAG, "error detecting EMC230x");
     return -1;
   }
-  ESP_LOGI(TAG, "successfully detected EMC230x at 0x%02x", addr);
+  ESP_LOGI(TAG, "successfully detected EMC230x at 0x%02x", emc->address);
   return 0;
+}
+
+void emc230x_destroy(emc230x* emc){
+  if(emc){
+    esp_err_t e = i2c_master_bus_rm_device(emc->i2c);
+    if(e != ESP_OK){
+      ESP_LOGW(TAG, "error (%s) removing i2c device at 0x%02x",
+               esp_err_to_name(e), emc->address);
+    }
+  }
 }
 
 static inline bool
 check_fanidx(unsigned fanidx){
   // no devices support more than five fans. ideally we would check against
-  // the actual device in use...
+  // the actual device in use...FIXME take emc
   if(fanidx > 5){
     ESP_LOGE(TAG, "invalid fan index %u", fanidx);
     return false;
@@ -335,7 +344,7 @@ check_fanidx(unsigned fanidx){
   return true;
 }
 
-int emc230x_setpwm(i2c_master_dev_handle_t i2cemc, unsigned fanidx, uint8_t pwm){
+int emc230x_setpwm(emc230x* emc, unsigned fanidx, uint8_t pwm){
   if(!check_fanidx(fanidx)){
     return -1;
   }
@@ -343,30 +352,30 @@ int emc230x_setpwm(i2c_master_dev_handle_t i2cemc, unsigned fanidx, uint8_t pwm)
     EMCREG_FAN1SETTING + 16 * fanidx,
     pwm
   };
-  return emc230x_xmit(i2cemc, buf, sizeof(buf));
+  return emc230x_xmit(emc->i2c, buf, sizeof(buf));
 }
 
-int emc230x_gettach(i2c_master_dev_handle_t i2cemc, unsigned fanidx, unsigned* tach){
+int emc230x_gettach(emc230x* emc, unsigned fanidx, unsigned* tach){
   if(!check_fanidx(fanidx)){
     return -1;
   }
   int reg = EMCREG_TACH1READHIGH + 16 * fanidx;
   uint8_t val;
-  if(emc230x_readreg(i2cemc, reg, "ReadTachHigh", &val)){
+  if(emc230x_readreg(emc->i2c, reg, "ReadTachHigh", &val)){
     return -1;
   }
   *tach = val << 5u;
   ++reg;
-  if(emc230x_readreg(i2cemc, reg, "ReadTachLow", &val)){
+  if(emc230x_readreg(emc->i2c, reg, "ReadTachLow", &val)){
     return -1;
   }
   *tach += val >> 3u;
   return 0;
 }
 
-int emc230x_gettach_rpm(i2c_master_dev_handle_t i2cemc, unsigned fanidx, unsigned* rpm){
+int emc230x_gettach_rpm(emc230x* emc, unsigned fanidx, unsigned* rpm){
   unsigned tach;
-  if(emc230x_gettach(i2cemc, fanidx, &tach)){
+  if(emc230x_gettach(emc, fanidx, &tach)){
     return -1;
   }
   // assumes a two-pole, five-edge fan, a 32.768 kHz input clock, and that the
@@ -382,31 +391,31 @@ int emc230x_gettach_rpm(i2c_master_dev_handle_t i2cemc, unsigned fanidx, unsigne
 }
 
 static int
-emc230x_set_clockbits(i2c_master_dev_handle_t i2cemc, uint8_t bits){
+emc230x_set_clockbits(emc230x* emc, uint8_t bits){
   uint8_t buf[] = {
     EMCREG_CONFIGURATION,
     0,
   };
-  if(emc230x_readreg(i2cemc, buf[0], "Configuration", buf + 1)){
+  if(emc230x_readreg(emc->i2c, buf[0], "Configuration", buf + 1)){
     return -1;
   }
   buf[1] = (buf[1] & 0xfc) | bits;
-  if(emc230x_xmit_locked(i2cemc, buf, sizeof(buf))){
+  if(emc230x_xmit_locked(emc->i2c, buf, sizeof(buf))){
     return -1;
   }
   return 0;
 }
 
-int emc230x_set_clockoutput(i2c_master_dev_handle_t i2cemc){
-  return emc230x_set_clockbits(i2cemc, 2u);
+int emc230x_set_clockoutput(emc230x* emc){
+  return emc230x_set_clockbits(emc, 2u);
 }
 
-int emc230x_set_clockinput(i2c_master_dev_handle_t i2cemc){
-  return emc230x_set_clockbits(i2cemc, 1u);
+int emc230x_set_clockinput(emc230x* emc){
+  return emc230x_set_clockbits(emc, 1u);
 }
 
 // use the internal oscillator as our clock, and don't replicate it on the
 // CLK pin. this is the default setting.
-int emc230x_set_clocklocal(i2c_master_dev_handle_t i2cemc){
-  return emc230x_set_clockbits(i2cemc, 0);
+int emc230x_set_clocklocal(emc230x* emc){
+  return emc230x_set_clockbits(emc, 0);
 }
