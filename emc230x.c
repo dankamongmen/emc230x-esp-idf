@@ -409,7 +409,7 @@ int emc230x_gettach_rpm(const emc230x* emc, unsigned fanidx, unsigned* rpm){
 }
 
 static int
-emc230x_set_clockbits(const emc230x* emc, uint8_t bits){
+emc230x_set_configuration(const emc230x* emc, uint8_t mask, uint8_t bits, bool enabled){
   uint8_t buf[] = {
     EMCREG_CONFIGURATION,
     0,
@@ -417,7 +417,7 @@ emc230x_set_clockbits(const emc230x* emc, uint8_t bits){
   if(emc230x_readreg(emc->i2c, buf[0], "Configuration", buf + 1)){
     return -1;
   }
-  buf[1] = (buf[1] & 0xfc) | bits;
+  buf[1] = (buf[1] & mask) | (enabled ? bits : 0);
   if(emc230x_xmit_locked(emc->i2c, buf, sizeof(buf))){
     return -1;
   }
@@ -425,33 +425,24 @@ emc230x_set_clockbits(const emc230x* emc, uint8_t bits){
 }
 
 int emc230x_set_clockoutput(const emc230x* emc){
-  return emc230x_set_clockbits(emc, 2u);
+  return emc230x_set_configuration(emc, 0xfc, 2u, true);
 }
 
 int emc230x_set_clockinput(const emc230x* emc){
-  return emc230x_set_clockbits(emc, 1u);
+  return emc230x_set_configuration(emc, 0xfc, 1u, true);
 }
 
-// use the internal oscillator as our clock, and don't replicate it on the
-// CLK pin. this is the default setting.
 int emc230x_set_clocklocal(const emc230x* emc){
-  return emc230x_set_clockbits(emc, 0);
+  return emc230x_set_configuration(emc, 0xfc, 0u, false);
 }
 
 int emc230x_set_alertmask(const emc230x* emc, bool masked){
-  uint8_t buf[] = {
-    EMCREG_CONFIGURATION,
-    0,
-  };
-  if(emc230x_readreg(emc->i2c, buf[0], "Configuration", buf + 1)){
-    return -1;
-  }
-  buf[1] &= 0x7f;
-  if(masked){
-    buf[1] |= 0x80;
-  }
-  if(emc230x_xmit_locked(emc->i2c, buf, sizeof(buf))){
-    return -1;
-  }
-  return 0;
+  return emc230x_set_configuration(emc, 0x7f, 0x80, masked);
+}
+
+int emc230x_set_timeout(const emc230x* emc, bool enabled){
+  return emc230x_set_configuration(emc, 0xbf, 0x40, enabled);
+}
+int emc230x_set_watchdog(const emc230x* emc, bool enabled){
+  return emc230x_set_configuration(emc, 0xdf, 0x20, enabled);
 }

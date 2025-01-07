@@ -65,7 +65,11 @@ int emc230x_gettach(const emc230x* emc, unsigned fanidx, unsigned* tach);
 int emc230x_gettach_rpm(const emc230x* emc, unsigned fanidx, unsigned* rpm);
 
 // by default, the alert pin is masked and will not be asserted. true
-// sets/keeps the mask, false disables it.
+// sets/keeps the mask. false disables it.
 int emc230x_set_alertmask(const emc230x* emc, bool masked);
+
+// by default, the watchdog timer only operates at initial poweron. true
+// enables the continuous watchdog. false disables it.
+int emc230x_set_watchdog(const emc230x* emc, bool enabled);
 
 #endif
