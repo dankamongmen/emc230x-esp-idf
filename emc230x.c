@@ -344,7 +344,7 @@ check_fanidx(unsigned fanidx){
   return true;
 }
 
-int emc230x_setpwm(emc230x* emc, unsigned fanidx, uint8_t pwm){
+int emc230x_setpwm(const emc230x* emc, unsigned fanidx, uint8_t pwm){
   if(!check_fanidx(fanidx)){
     return -1;
   }
@@ -355,7 +355,7 @@ int emc230x_setpwm(emc230x* emc, unsigned fanidx, uint8_t pwm){
   return emc230x_xmit(emc->i2c, buf, sizeof(buf));
 }
 
-int emc230x_gettach(emc230x* emc, unsigned fanidx, unsigned* tach){
+int emc230x_gettach(const emc230x* emc, unsigned fanidx, unsigned* tach){
   if(!check_fanidx(fanidx)){
     return -1;
   }
@@ -373,7 +373,7 @@ int emc230x_gettach(emc230x* emc, unsigned fanidx, unsigned* tach){
   return 0;
 }
 
-int emc230x_gettach_rpm(emc230x* emc, unsigned fanidx, unsigned* rpm){
+int emc230x_gettach_rpm(const emc230x* emc, unsigned fanidx, unsigned* rpm){
   unsigned tach;
   if(emc230x_gettach(emc, fanidx, &tach)){
     return -1;
@@ -391,7 +391,7 @@ int emc230x_gettach_rpm(emc230x* emc, unsigned fanidx, unsigned* rpm){
 }
 
 static int
-emc230x_set_clockbits(emc230x* emc, uint8_t bits){
+emc230x_set_clockbits(const emc230x* emc, uint8_t bits){
   uint8_t buf[] = {
     EMCREG_CONFIGURATION,
     0,
@@ -406,16 +406,16 @@ emc230x_set_clockbits(emc230x* emc, uint8_t bits){
   return 0;
 }
 
-int emc230x_set_clockoutput(emc230x* emc){
+int emc230x_set_clockoutput(const emc230x* emc){
   return emc230x_set_clockbits(emc, 2u);
 }
 
-int emc230x_set_clockinput(emc230x* emc){
+int emc230x_set_clockinput(const emc230x* emc){
   return emc230x_set_clockbits(emc, 1u);
 }
 
 // use the internal oscillator as our clock, and don't replicate it on the
 // CLK pin. this is the default setting.
-int emc230x_set_clocklocal(emc230x* emc){
+int emc230x_set_clocklocal(const emc230x* emc){
   return emc230x_set_clockbits(emc, 0);
 }

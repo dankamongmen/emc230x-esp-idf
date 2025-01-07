@@ -42,28 +42,26 @@ int emc230x_detect_at_address(i2c_master_bus_handle_t i2c,
 // destroy any resources held by emc, including the i2c handle.
 void emc230x_destroy(emc230x* emc);
 
-// FIXME can we make these emcs const?
-
 // use the CLK pin as an push-pull output, allowing multiple devices to sync.
 // this forces use of our internal oscillator as our clock source.
-int emc230x_set_clockoutput(emc230x* emc);
+int emc230x_set_clockoutput(const emc230x* emc);
 
 // use the CLK pin as an input.
-int emc230x_set_clockinput(emc230x* emc);
+int emc230x_set_clockinput(const emc230x* emc);
 
 // use the internal oscillator as our clock, and don't replicate it on the
 // CLK pin. this is the default setting.
-int emc230x_set_clocklocal(emc230x* emc);
+int emc230x_set_clocklocal(const emc230x* emc);
 
 // set the PWM output [0..255] for the specified fan.
-int emc230x_setpwm(emc230x* emc, unsigned fanidx, uint8_t pwm);
+int emc230x_setpwm(const emc230x* emc, unsigned fanidx, uint8_t pwm);
 
 // read the tachometer for the specified fan. returns the direct result read
-// from the register (number of 32.768 kHz cycles between measurements).
-int emc230x_gettach(emc230x* emc, unsigned fanidx, unsigned* tach);
+// from the register (const number of 32.768 kHz cycles between measurements).
+int emc230x_gettach(const emc230x* emc, unsigned fanidx, unsigned* tach);
 
 // read the tachometer for the specified fan, and convert it to rpm. assumes a
 // two-pole fan reading five edges.
-int emc230x_gettach_rpm(emc230x* emc, unsigned fanidx, unsigned* rpm);
+int emc230x_gettach_rpm(const emc230x* emc, unsigned fanidx, unsigned* rpm);
 
 #endif
