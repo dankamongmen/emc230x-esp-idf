@@ -64,4 +64,8 @@ int emc230x_gettach(const emc230x* emc, unsigned fanidx, unsigned* tach);
 // two-pole fan reading five edges.
 int emc230x_gettach_rpm(const emc230x* emc, unsigned fanidx, unsigned* rpm);
 
+// by default, the alert pin is masked and will not be asserted. true
+// sets/keeps the mask, false disables it.
+int emc230x_set_alertmask(const emc230x* emc, bool masked);
+
 #endif

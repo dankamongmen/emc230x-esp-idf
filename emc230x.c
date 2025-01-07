@@ -437,3 +437,21 @@ int emc230x_set_clockinput(const emc230x* emc){
 int emc230x_set_clocklocal(const emc230x* emc){
   return emc230x_set_clockbits(emc, 0);
 }
+
+int emc230x_set_alertmask(const emc230x* emc, bool masked){
+  uint8_t buf[] = {
+    EMCREG_CONFIGURATION,
+    0,
+  };
+  if(emc230x_readreg(emc->i2c, buf[0], "Configuration", buf + 1)){
+    return -1;
+  }
+  buf[1] &= 0x7f;
+  if(masked){
+    buf[1] |= 0x80;
+  }
+  if(emc230x_xmit_locked(emc->i2c, buf, sizeof(buf))){
+    return -1;
+  }
+  return 0;
+}
