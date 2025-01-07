@@ -333,19 +333,37 @@ void emc230x_destroy(emc230x* emc){
   }
 }
 
+// verify that the specified fan is valid for the detected model.
 static inline bool
-check_fanidx(unsigned fanidx){
-  // no devices support more than five fans. ideally we would check against
-  // the actual device in use...FIXME take emc
-  if(fanidx > 5){
-    ESP_LOGE(TAG, "invalid fan index %u", fanidx);
+check_fanidx(const emc230x* emc, unsigned fanidx){
+  unsigned maxfan;
+  switch(emc->productid){
+    case EMC2301:
+      maxfan = 0;
+      break;
+    case EMC2302_MODEL_1:
+    case EMC2302_MODEL_2:
+      maxfan = 1;
+      break;
+    case EMC2303:
+      maxfan = 2;
+      break;
+    case EMC2305:
+      maxfan = 4;
+      break;
+    default:
+      ESP_LOGE(TAG, "emc model invalid, uh-oh"); // this is very bad
+      return false;
+  }
+  if(fanidx > maxfan){
+    ESP_LOGE(TAG, "invalid fan index %u (max %u)", fanidx, maxfan);
     return false;
   }
   return true;
 }
 
 int emc230x_setpwm(const emc230x* emc, unsigned fanidx, uint8_t pwm){
-  if(!check_fanidx(fanidx)){
+  if(!check_fanidx(emc, fanidx)){
     return -1;
   }
   uint8_t buf[] = {
@@ -356,7 +374,7 @@ int emc230x_setpwm(const emc230x* emc, unsigned fanidx, uint8_t pwm){
 }
 
 int emc230x_gettach(const emc230x* emc, unsigned fanidx, unsigned* tach){
-  if(!check_fanidx(fanidx)){
+  if(!check_fanidx(emc, fanidx)){
     return -1;
   }
   int reg = EMCREG_TACH1READHIGH + 16 * fanidx;
