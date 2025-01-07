@@ -461,7 +461,6 @@ emc230x_set_fan_bit(const emc230x* emc, unsigned fanidx, bool enabled,
   if(emc230x_readreg(emc->i2c, buf[0], name, buf + 1)){
     return -1;
   }
-  const uint8_t mask = ~(1u << fanidx);
   buf[1] &= ~(1u << fanidx);
   if(enabled){
     buf[1] |= 1u << fanidx;
@@ -481,5 +480,5 @@ int emc230x_set_pwmpolarity(const emc230x* emc, unsigned fanidx, bool inverted){
 }
 
 int emc230x_set_pwmoutput(const emc230x* emc, unsigned fanidx, bool pushpull){
-  return emc230x_set_fan_bit(emc, fanidx, inverted, EMCREG_PWMOUTPUT, "PWMOutput");
+  return emc230x_set_fan_bit(emc, fanidx, pushpull, EMCREG_PWMOUTPUT, "PWMOutput");
 }
