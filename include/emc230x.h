@@ -72,4 +72,8 @@ int emc230x_set_alertmask(const emc230x* emc, bool masked);
 // enables the continuous watchdog. false disables it.
 int emc230x_set_watchdog(const emc230x* emc, bool enabled);
 
+// by default, interrupts are disabled for all fans. true enables interrupts
+// for the specified fan. false disables them.
+int emc230x_set_interrupt(const emc230x* emc, unsigned fanidx, bool enabled);
+
 #endif

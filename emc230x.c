@@ -443,6 +443,29 @@ int emc230x_set_alertmask(const emc230x* emc, bool masked){
 int emc230x_set_timeout(const emc230x* emc, bool enabled){
   return emc230x_set_configuration(emc, 0xbf, 0x40, enabled);
 }
+
 int emc230x_set_watchdog(const emc230x* emc, bool enabled){
   return emc230x_set_configuration(emc, 0xdf, 0x20, enabled);
+}
+
+int emc230x_set_interrupt(const emc230x* emc, unsigned fanidx, bool enabled){
+  uint8_t buf[] = {
+    EMCREG_FANINTR,
+    0,
+  };
+  if(!check_fanidx(emc, fanidx)){
+    return -1;
+  }
+  if(emc230x_readreg(emc->i2c, buf[0], "InterruptEnabled", buf + 1)){
+    return -1;
+  }
+  const uint8_t mask = ~(1u << fanidx);
+  buf[1] &= ~(1u << fanidx);
+  if(enabled){
+    buf[1] |= 1u << fanidx;
+  }
+  if(emc230x_xmit_locked(emc->i2c, buf, sizeof(buf))){
+    return -1;
+  }
+  return 0;
 }
