@@ -80,4 +80,8 @@ int emc230x_set_interrupt(const emc230x* emc, unsigned fanidx, bool enabled);
 // to interpret higher PWM as a lower duty cycle.
 int emc230x_set_pwmpolarity(const emc230x* emc, unsigned fanidx, bool inverted);
 
+// by default, PWM is open drain. true sets the specified PWM output to
+// push-pull, false to open drain.
+int emc230x_set_pwmoutput(const emc230x* emc, unsigned fanidx, bool pushpull);
+
 #endif

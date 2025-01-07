@@ -479,3 +479,7 @@ int emc230x_set_interrupt(const emc230x* emc, unsigned fanidx, bool enabled){
 int emc230x_set_pwmpolarity(const emc230x* emc, unsigned fanidx, bool inverted){
   return emc230x_set_fan_bit(emc, fanidx, inverted, EMCREG_PWMPOLARITY, "PWMPolarity");
 }
+
+int emc230x_set_pwmoutput(const emc230x* emc, unsigned fanidx, bool pushpull){
+  return emc230x_set_fan_bit(emc, fanidx, inverted, EMCREG_PWMOUTPUT, "PWMOutput");
+}
