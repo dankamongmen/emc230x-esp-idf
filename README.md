@@ -19,4 +19,8 @@ Compared to directly managing the fans, the EMC230x can reduce pin count,
 eliminate the need for a tachometer interrupt, offload tach-based PWM
 management, and force the tach signal to the SMBus voltage.
 
+The EMC2301 and both models of the EMC2302 have fixed SMBus addresses,
+but the EMC2302 and EMC2305 support six different ones based on the
+address select pin.
+
 [![Component Registry](https://components.espressif.com/components/dankamongmen/emc230x/badge.svg)](https://components.espressif.com/components/dankamongmen/emc230x)

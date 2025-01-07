@@ -10,6 +10,30 @@ static const char* TAG = "emc";
 #define EMC2301_ADDRESS   0x2f // emc2301
 #define EMC2302_1_ADDRESS 0x2e // emc2302-1
 #define EMC2302_2_ADDRESS 0x2f // emc2302-2 (same as emc2301)
+#define EMC2303_ADDRESS   0x2f // emc2303 default
+#define EMC2305_ADDRESS   0x2f // emc2305 default
+
+// the emc2303 and emc2305 can use one of six addresses, based off the
+// pullup resistor for the address selection pin. the default is 0x2f.
+static uint8_t EMC230X_SEL_ADDRESSES[] = {
+  0x2c, // 10 kΩ
+  0x2d, // 15 kΩ
+  0x2e, // 4.7 kΩ
+  0x2f, // 6.8 kΩ, default for both emc2303 and emc2305
+  0x4c, // 22 kΩ
+  0x4d, // 33 kΩ
+};
+
+// returns true iff address is a valid selectable address
+static bool
+check_selected_address(uint8_t address){
+  for(unsigned i = 0 ; i < sizeof(EMC230X_SEL_ADDRESSES) / sizeof(*EMC230X_SEL_ADDRESSES) ; ++i){
+    if(EMC230X_SEL_ADDRESSES[i] == address){
+      return true;
+    }
+  }
+  return false;
+}
 
 // software locked registers cannot be modified unless the LOCK bit (LSB
 // of EMCREG_SOFTWARELOCK) is zero.
@@ -210,14 +234,22 @@ emc230x_mod_detect(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc,
 
 static int16_t
 emc230x_detect_addr(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc,
-                    emc230x_model model){
+                    emc230x_model model, uint8_t addr){
   switch(model){
     case EMC2301:
+      if(addr && addr != EMC2301_ADDRESS){
+        ESP_LOGE(TAG, "invalid address %u for emc2301", addr);
+        return -1;
+      }
       if(emc230x_mod_detect(i2c, i2cemc, EMC2301_ADDRESS, EMCPRODUCTID_2301) == 0){
-        return EMC2302_1_ADDRESS;
+        return EMC2301_ADDRESS;
       }
       break;
     case EMC2302_MODEL_UNSPEC:
+      if(addr){ // should not be specified for unknown emc2302
+        ESP_LOGE(TAG, "invalid address %u for emc2302", addr);
+        return -1;
+      }
       if(emc230x_mod_detect(i2c, i2cemc, EMC2302_1_ADDRESS, EMCPRODUCTID_2302) == 0){
         return EMC2302_1_ADDRESS;
       }
@@ -226,20 +258,44 @@ emc230x_detect_addr(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc
       }
       break;
     case EMC2302_MODEL_1:
+      if(addr && addr != EMC2302_1_ADDRESS){
+        ESP_LOGE(TAG, "invalid address %u for emc2302m1", addr);
+        return -1;
+      }
       if(emc230x_mod_detect(i2c, i2cemc, EMC2302_1_ADDRESS, EMCPRODUCTID_2302) == 0){
         return EMC2302_1_ADDRESS;
       }
       break;
     case EMC2302_MODEL_2:
+      if(addr && addr != EMC2302_2_ADDRESS){
+        ESP_LOGE(TAG, "invalid address %u for emc2302m2", addr);
+        return -1;
+      }
       if(emc230x_mod_detect(i2c, i2cemc, EMC2302_2_ADDRESS, EMCPRODUCTID_2302) == 0){
         return EMC2302_2_ADDRESS;
       }
       break;
     case EMC2303:
-      ESP_LOGE(TAG, "emc2303 is not yet supported"); // FIXME
+      if(!addr){
+        addr = EMC2303_ADDRESS;
+      }else if(!check_selected_address(addr)){
+        ESP_LOGE(TAG, "invalid address %u for emc2303", addr);
+        return -1;
+      }
+      if(emc230x_mod_detect(i2c, i2cemc, addr, EMCPRODUCTID_2303) == 0){
+        return addr;
+      }
       break;
     case EMC2305:
-      ESP_LOGE(TAG, "emc2305 is not yet supported"); // FIXME
+      if(!addr){
+        addr = EMC2303_ADDRESS;
+      }else if(!check_selected_address(addr)){
+        ESP_LOGE(TAG, "invalid address %u for emc2305", addr);
+        return -1;
+      }
+      if(emc230x_mod_detect(i2c, i2cemc, addr, EMCPRODUCTID_2305) == 0){
+        return addr;
+      }
       break;
   }
   return -1;
@@ -247,7 +303,19 @@ emc230x_detect_addr(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc
 
 int emc230x_detect(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cemc,
                    emc230x_model model){
-  int16_t addr = emc230x_detect_addr(i2c, i2cemc, model);
+  int16_t addr = emc230x_detect_addr(i2c, i2cemc, model, 0);
+  if(addr < 0){
+    ESP_LOGE(TAG, "error detecting EMC230x");
+    return -1;
+  }
+  ESP_LOGI(TAG, "successfully detected EMC230x at 0x%02x", addr);
+  return 0;
+}
+
+int emc230x_detect_at_address(i2c_master_bus_handle_t i2c,
+                              i2c_master_dev_handle_t* i2cemc,
+                              emc230x_model model, uint8_t address){
+  int16_t addr = emc230x_detect_addr(i2c, i2cemc, model, address);
   if(addr < 0){
     ESP_LOGE(TAG, "error detecting EMC230x");
     return -1;
