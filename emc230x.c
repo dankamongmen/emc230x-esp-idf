@@ -355,12 +355,12 @@ int emc230x_gettach(i2c_master_dev_handle_t i2cemc, unsigned fanidx, unsigned* t
   if(emc230x_readreg(i2cemc, reg, "ReadTachHigh", &val)){
     return -1;
   }
-  *rpm = val << 5u;
+  *tach = val << 5u;
   ++reg;
   if(emc230x_readreg(i2cemc, reg, "ReadTachLow", &val)){
     return -1;
   }
-  *rpm += val >> 3u;
+  *tach += val >> 3u;
   return 0;
 }
 
