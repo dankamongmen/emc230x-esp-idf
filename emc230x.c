@@ -278,7 +278,7 @@ int emc230x_setpwm(i2c_master_dev_handle_t i2cemc, unsigned fanidx, uint8_t pwm)
   return emc230x_xmit(i2cemc, buf, sizeof(buf));
 }
 
-int emc230x_gettach(i2c_master_dev_handle_t i2cemc, unsigned fanidx, unsigned* rpm){
+int emc230x_gettach(i2c_master_dev_handle_t i2cemc, unsigned fanidx, unsigned* tach){
   if(!check_fanidx(fanidx)){
     return -1;
   }
@@ -293,6 +293,23 @@ int emc230x_gettach(i2c_master_dev_handle_t i2cemc, unsigned fanidx, unsigned* r
     return -1;
   }
   *rpm += val >> 3u;
+  return 0;
+}
+
+int emc230x_gettach_rpm(i2c_master_dev_handle_t i2cemc, unsigned fanidx, unsigned* rpm){
+  unsigned tach;
+  if(emc230x_gettach(i2cemc, fanidx, &tach)){
+    return -1;
+  }
+  // assumes a two-pole, five-edge fan, a 32.768 kHz input clock, and that the
+  // tach multiplier is 1 (00 in the RANGE bits for the fan).
+  const unsigned edges = 5;
+  const float freq = 32768;
+  const float num = (edges - 1) * freq * 60;
+  const unsigned poles = 2;
+  const float tachmult = 1.0;
+  const float den = poles * tach / tachmult;
+  *rpm = num / den;
   return 0;
 }
 

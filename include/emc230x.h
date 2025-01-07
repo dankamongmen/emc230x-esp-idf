@@ -35,7 +35,12 @@ int emc230x_set_clocklocal(i2c_master_dev_handle_t i2cemc);
 // set the PWM output [0..255] for the specified fan.
 int emc230x_setpwm(i2c_master_dev_handle_t i2cemc, unsigned fanidx, uint8_t pwm);
 
-// read the tachometer for the specified fan.
+// read the tachometer for the specified fan. returns the direct result read
+// from the register (number of 32.768 kHz cycles between measurements).
 int emc230x_gettach(i2c_master_dev_handle_t i2cemc, unsigned fanidx, unsigned* tach);
+
+// read the tachometer for the specified fan, and convert it to rpm. assumes a
+// two-pole fan reading five edges.
+int emc230x_gettach_rpm(i2c_master_dev_handle_t i2cemc, unsigned fanidx, unsigned* rpm);
 
 #endif
