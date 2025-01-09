@@ -100,10 +100,10 @@ typedef enum {
   EMC230X_FSR_FNSPIN = 0x02,  // one or more fans cannot spin up
   EMC230X_FSR_DVFAIL = 0x04,  // one or more fans cannot reach the requested speed
   EMC230X_FSR_WATCH = 0x80    // the watchdog timer has expired
-}
+} emc230x_fsr_bits;
 
 // read the Fan Status register into fsr. this resets the EMC230X_FSR_WATCH
-// bit (but no other bits). use EMC_230X_FSR_* to test bits.
+// bit (but no other bits). use emc230x_fsr_bits members to test bits.
 int emc230x_read_fanstatus(const emc230x* emc, uint8_t* fsr);
 
 // read the Fan Stall Status register into fss. if the error state is no
