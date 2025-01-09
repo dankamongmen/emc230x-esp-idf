@@ -522,13 +522,13 @@ int emc230x_read_fanstatus(const emc230x* emc, uint8_t* fsr){
 }
 
 int emc230x_read_fanstallstatus(const emc230x* emc, uint8_t* fss){
-  return emc230x_readreg(emc->i2c, EMCREG_STALLSTATUS, "FanStallStatus", fsr);
+  return emc230x_readreg(emc->i2c, EMCREG_STALLSTATUS, "FanStallStatus", fss);
 }
 
 int emc230x_read_fanspinstatus(const emc230x* emc, uint8_t* fss){
-  return emc230x_readreg(emc->i2c, EMCREG_SPINSTATUS, "FanSpinStatus", fsr);
+  return emc230x_readreg(emc->i2c, EMCREG_SPINSTATUS, "FanSpinStatus", fss);
 }
 
-int emc230x_read_fanspinstatus(const emc230x* emc, uint8_t* fdf){
-  return emc230x_readreg(emc->i2c, EMCREG_DRIVESTATUS, "FanDriveFail", fsr);
+int emc230x_read_fandrivefail(const emc230x* emc, uint8_t* fdf){
+  return emc230x_readreg(emc->i2c, EMCREG_DRIVESTATUS, "FanDriveFail", fdf);
 }

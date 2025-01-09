@@ -125,6 +125,6 @@ int emc230x_read_fanspinstatus(const emc230x* emc, uint8_t* fss);
 // if all bits are clear, the EMC230X_FSR_DVFAIL bit will be cleared
 // in the Fan Status register. the LSB is fan 1, up to 0x10 for the fifth fan
 // on the EMC2305.
-int emc230x_read_fanspinstatus(const emc230x* emc, uint8_t* fdf);
+int emc230x_read_fandrivefail(const emc230x* emc, uint8_t* fdf);
 
 #endif
