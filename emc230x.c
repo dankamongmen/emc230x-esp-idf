@@ -452,10 +452,7 @@ int emc230x_set_watchdog(const emc230x* emc, bool enabled){
 static int
 emc230x_set_fan_bit(const emc230x* emc, unsigned fanidx, bool enabled,
                     emcreg_e reg, const char* name){
-  uint8_t buf[] = {
-    EMCREG_FANINTR,
-    0,
-  };
+  uint8_t buf[] = { reg, 0, };
   if(!check_fanidx(emc, fanidx)){
     return -1;
   }
@@ -522,4 +519,16 @@ int emc230x_set_pwmbasefreq(const emc230x* emc, unsigned fanidx, emc230x_base_fr
 
 int emc230x_read_fanstatus(const emc230x* emc, uint8_t* fsr){
   return emc230x_readreg(emc->i2c, EMCREG_FANSTATUS, name, fsr);
+}
+
+int emc230x_read_fanstallstatus(const emc230x* emc, uint8_t* fss){
+  return emc230x_readreg(emc->i2c, EMCREG_STALLSTATUS, name, fsr);
+}
+
+int emc230x_read_fanspinstatus(const emc230x* emc, uint8_t* fss){
+  return emc230x_readreg(emc->i2c, EMCREG_SPINSTATUS, name, fsr);
+}
+
+int emc230x_read_fanspinstatus(const emc230x* emc, uint8_t* fdf){
+  return emc230x_readreg(emc->i2c, EMCREG_DRIVESTATUS, name, fsr);
 }

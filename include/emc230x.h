@@ -96,14 +96,35 @@ typedef enum {
 int emc230x_set_pwmbasefreq(const emc230x* emc, unsigned fanidx, emc230x_base_freq freq);
 
 typedef enum {
-  EMC230x_FSR_FNSTL = 0x01,   // one or more fans have stalled
-  EMC230x_FSR_FNSPIN = 0x02,  // one or more fans cannot spin up
-  EMC230x_FSR_DVFAIL = 0x04,  // one or more fans cannot reach the requested speed
+  EMC230X_FSR_FNSTL = 0x01,   // one or more fans have stalled
+  EMC230X_FSR_FNSPIN = 0x02,  // one or more fans cannot spin up
+  EMC230X_FSR_DVFAIL = 0x04,  // one or more fans cannot reach the requested speed
   EMC230X_FSR_WATCH = 0x80    // the watchdog timer has expired
 }
 
-// read the value of the Fan Status Register into fsr. this resets the
-// EMC230X_FSR_WATCH bit. use EMC_230X_FSR_* to test bits.
+// read the Fan Status register into fsr. this resets the EMC230X_FSR_WATCH
+// bit (but no other bits). use EMC_230X_FSR_* to test bits.
 int emc230x_read_fanstatus(const emc230x* emc, uint8_t* fsr);
+
+// read the Fan Stall Status register into fss. if the error state is no
+// longer occurring, reading the register clears the associated bit.
+// if all bits are clear, the EMC230X_FSR_FNSTL bit will be cleared
+// in the Fan Status register. the LSB is fan 1, up to 0x10 for the fifth fan
+// on the EMC2305.
+int emc230x_read_fanstallstatus(const emc230x* emc, uint8_t* fss);
+
+// read the Fan Spin Status register into fss. if the error state is no
+// longer occurring, reading the register clears the associated bit.
+// if all bits are clear, the EMC230X_FSR_FNSPIN bit will be cleared
+// in the Fan Status register. the LSB is fan 1, up to 0x10 for the fifth fan
+// on the EMC2305.
+int emc230x_read_fanspinstatus(const emc230x* emc, uint8_t* fss);
+
+// read the Fan Drive Fail register into fdf. if the error state is no
+// longer occurring, reading the register clears the associated bit.
+// if all bits are clear, the EMC230X_FSR_DVFAIL bit will be cleared
+// in the Fan Status register. the LSB is fan 1, up to 0x10 for the fifth fan
+// on the EMC2305.
+int emc230x_read_fanspinstatus(const emc230x* emc, uint8_t* fdf);
 
 #endif
