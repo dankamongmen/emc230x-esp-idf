@@ -95,4 +95,15 @@ typedef enum {
 // which is what you want for PC fans.
 int emc230x_set_pwmbasefreq(const emc230x* emc, unsigned fanidx, emc230x_base_freq freq);
 
+typedef enum {
+  EMC230x_FSR_FNSTL = 0x01,   // one or more fans have stalled
+  EMC230x_FSR_FNSPIN = 0x02,  // one or more fans cannot spin up
+  EMC230x_FSR_DVFAIL = 0x04,  // one or more fans cannot reach the requested speed
+  EMC230X_FSR_WATCH = 0x80    // the watchdog timer has expired
+}
+
+// read the value of the Fan Status Register into fsr. this resets the
+// EMC230X_FSR_WATCH bit. use EMC_230X_FSR_* to test bits.
+int emc230x_read_fanstatus(const emc230x* emc, uint8_t* fsr);
+
 #endif

@@ -519,3 +519,7 @@ int emc230x_set_pwmbasefreq(const emc230x* emc, unsigned fanidx, emc230x_base_fr
   }
   return 0;
 }
+
+int emc230x_read_fanstatus(const emc230x* emc, uint8_t* fsr){
+  return emc230x_readreg(emc->i2c, EMCREG_FANSTATUS, name, fsr);
+}
